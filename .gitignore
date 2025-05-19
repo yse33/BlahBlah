@@ -1,0 +1,41 @@
+# Build files
+/build/
+/cmake-build-*/
+
+# IDE-specific files
+../.idea/
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Compiled object files
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.bak
+*.pid
+*.ncb
+*.sdf
+*.suo
+
+# Dependency directories
+/deps/
+/vendor/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+CMakeLists.txt.user
+CMakeLists.txt.user.cmake
+CMakeLists.txt.user.ninja
+CMakeLists.txt
