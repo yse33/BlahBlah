@@ -3,19 +3,21 @@
 #include "../util/MyString.h"
 #include "../util/MyVector.hpp"
 
+class Chat;
+
 class User {
 protected:
     MyString username;
     MyString password;
-    //TODO: Replace vector with a Chat class
-    MyVector<MyString> messages;
+    MyVector<Chat*> chats;
 public:
     User() = default;
     User(MyString username, MyString password);
 
-    virtual ~User() = default;
-
     MyString getUsername() const;
 
-    void receiveMessage(const MyString& message);
+    void addChat(Chat* chat);
+    void removeChat(const Chat* chat);
+
+    virtual ~User() = default;
 };

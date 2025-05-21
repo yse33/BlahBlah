@@ -1,7 +1,7 @@
 #include "Message.h"
 #include "../users/User.h"
 
-Message::Message(User* sender, MyString text, const time_t timestamp)
+Message::Message(const User* sender, MyString text, const time_t timestamp)
     : sender(sender), text(std::move(text)), timestamp(timestamp) {}
 
 ostream& operator<<(ostream& os, const Message& message) {

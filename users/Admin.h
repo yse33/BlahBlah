@@ -8,6 +8,6 @@ private:
     unsigned int id = 0;
 public:
     Admin() = default;
-    Admin(const MyString &username, const MyString &password);
+    Admin(MyString username, MyString password);
     Admin(MyString username, MyString password, unsigned int id);
 };

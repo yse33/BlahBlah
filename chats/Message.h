@@ -7,12 +7,12 @@ class User;
 
 class Message {
 private:
-    User* sender = nullptr;
+    const User* sender = nullptr;
     MyString text;
     time_t timestamp = time(nullptr);
 public:
     Message() = default;
-    Message(User* sender, MyString text, time_t timestamp = time(nullptr));
+    Message(const User* sender, MyString text, time_t timestamp = time(nullptr));
 
     friend ostream& operator<<(ostream& os, const Message& message);
 
