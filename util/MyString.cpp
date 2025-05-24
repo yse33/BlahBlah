@@ -176,3 +176,11 @@ istream& operator>>(istream& is, MyString& myString) {
     myString = move(MyString(buffer));
     return is;
 }
+
+istream& getline(istream& is, MyString& myString) {
+    char buffer[1024];
+    is.getline(buffer, sizeof(buffer));
+    myString.free();
+    myString = move(MyString(buffer));
+    return is;
+}

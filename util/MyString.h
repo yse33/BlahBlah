@@ -41,6 +41,7 @@ public:
 
     friend ostream& operator<<(ostream& os, const MyString& myString);
     friend istream& operator>>(istream& is, MyString& myString);
+    friend istream& getline(istream& is, MyString& myString);
 };
 
 bool operator==(const MyString& lhs, const MyString& rhs);
