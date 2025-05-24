@@ -77,17 +77,8 @@ MyString::~MyString() {
     free();
 }
 
-ostream& operator<<(ostream& os, const MyString& myString) {
-    os << (myString.str ? myString.str : "");
-    return os;
-}
-
-istream& operator>>(istream& is, MyString& myString) {
-    char buffer[1024];
-    is >> buffer;
-    myString.free();
-    myString = move(MyString(buffer));
-    return is;
+MyString* MyString::clone() const {
+    return new MyString(*this);
 }
 
 size_t MyString::getLength() const {
@@ -96,6 +87,39 @@ size_t MyString::getLength() const {
 
 const char* MyString::getString() const {
     return str ? str : "";
+}
+
+MyString MyString::substring(const size_t start, const size_t length) const {
+    if (start >= size) throw out_of_range("Start index out of range");
+    if (start + length > size) throw out_of_range("Substring exceeds string length");
+
+    MyString result;
+    result.size = length;
+    result.capacity = length + 1;
+    result.str = new char[result.capacity];
+    strncpy(result.str, str + start, length);
+    result.str[length] = '\0';
+    return result;
+}
+
+MyVector<MyString> MyString::split(const char delimiter) const {
+    MyVector<MyString> result;
+    size_t start = 0;
+
+    for (size_t i = 0; i < size; i++) {
+        if (str[i] == delimiter) {
+            if (i > start) {
+                result.push(substring(start, i - start));
+            }
+            start = i + 1;
+        }
+    }
+
+    if (start < size) {
+        result.push(substring(start, size - start));
+    }
+
+    return result;
 }
 
 MyString MyString::operator+(const MyString& other) const {
@@ -132,6 +156,23 @@ bool operator==(const MyString& lhs, const MyString& rhs) {
     return strcmp(lhs.getString(), rhs.getString()) == 0;
 }
 
+bool operator==(const MyString& lhs, const char* rhs) {
+    return strcmp(lhs.getString(), rhs) == 0;
+}
+
 bool operator!=(const MyString& lhs, const MyString& rhs) {
     return !(lhs == rhs);
+}
+
+ostream& operator<<(ostream& os, const MyString& myString) {
+    os << (myString.str ? myString.str : "");
+    return os;
+}
+
+istream& operator>>(istream& is, MyString& myString) {
+    char buffer[1024];
+    is >> buffer;
+    myString.free();
+    myString = move(MyString(buffer));
+    return is;
 }
