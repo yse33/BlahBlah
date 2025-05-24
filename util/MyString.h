@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MyVector.hpp"
 #include <iostream>
 
 using namespace std;
@@ -16,9 +17,7 @@ private:
     void resize(size_t newCapacity);
 public:
     MyString() = default;
-
     explicit MyString(const char* str);
-
     MyString(const MyString& other);
     MyString(MyString&& other) noexcept;
 
@@ -27,17 +26,23 @@ public:
 
     ~MyString();
 
-    friend ostream& operator<<(ostream& os, const MyString& myString);
-    friend istream& operator>>(istream& is, MyString& myString);
+    MyString* clone() const;
+
+    size_t getLength() const;
+    const char* getString() const;
+
+    MyString substring(size_t start, size_t length) const;
+    MyVector<MyString> split(char delimiter) const;
 
     MyString operator+(const MyString& other) const;
     MyString operator+(const char* other) const;
     char& operator[](size_t index);
     char operator[](size_t index) const;
 
-    size_t getLength() const;
-    const char* getString() const;
+    friend ostream& operator<<(ostream& os, const MyString& myString);
+    friend istream& operator>>(istream& is, MyString& myString);
 };
 
 bool operator==(const MyString& lhs, const MyString& rhs);
+bool operator==(const MyString& lhs, const char* rhs);
 bool operator!=(const MyString& lhs, const MyString& rhs);

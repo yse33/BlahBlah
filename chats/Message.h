@@ -14,6 +14,8 @@ public:
     Message() = default;
     Message(const User* sender, MyString text, time_t timestamp = time(nullptr));
 
+    Message* clone() const;
+
     friend ostream& operator<<(ostream& os, const Message& message);
 
     ~Message() = default;

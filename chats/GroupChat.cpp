@@ -1,9 +1,16 @@
 #include "GroupChat.h"
+#include "../users/User.h"
 
-GroupChat::GroupChat(MyVector<User*> participants, User* admin)
-    : Chat(std::move(participants)), admin(admin), adminApproval(true) {}
+#include <utility>
 
-MyString GroupChat::getName() const {
+GroupChat::GroupChat(MyString  name, MyVector<User> participants, User* admin)
+    : Chat(std::move(participants)), name(std::move(name)), admin(admin), adminApproval(true) {}
+
+Chat* GroupChat::clone() const {
+    return new GroupChat(*this);
+}
+
+MyString GroupChat::getName(const User& loggedUser) const {
     return name;
 }
 
@@ -11,7 +18,7 @@ bool GroupChat::isAdminApproval() const {
     return adminApproval;
 }
 
-void GroupChat::setAdminApproval(bool approval) {
+void GroupChat::setAdminApproval(const bool approval) {
     adminApproval = approval;
 }
 
@@ -21,7 +28,7 @@ void GroupChat::addPendingRequest(const MyString& request) {
 
 void GroupChat::removePendingRequest(const MyString& request) {
     for (size_t i = 0; i < pendingRequests.getSize(); ++i) {
-        if (pendingRequests[i] == request) {
+        if (*pendingRequests[i] == request) {
             pendingRequests.remove(i);
             break;
         }

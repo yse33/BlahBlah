@@ -3,7 +3,7 @@
 
 unsigned int Chat::chatCount = 0;
 
-Chat::Chat(MyVector<User*> participants) : participants(std::move(participants)) {
+Chat::Chat(MyVector<User> participants) : participants(std::move(participants)) {
     id = ++chatCount;
 }
 
@@ -11,7 +11,7 @@ unsigned int Chat::getId() const {
     return id;
 }
 
-const MyVector<User*>& Chat::getParticipants() const {
+const MyVector<User>& Chat::getParticipants() const {
     return participants;
 }
 

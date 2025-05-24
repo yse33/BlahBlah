@@ -4,8 +4,20 @@
 User::User(MyString username, MyString password)
     : username(std::move(username)), password(std::move(password)) {}
 
+User* User::clone() const {
+    return new User(*this);
+}
+
 MyString User::getUsername() const {
     return username;
+}
+
+MyString User::getPassword() const {
+    return password;
+}
+
+MyVector<Chat> User::getChats() const {
+    return chats;
 }
 
 void User::addChat(Chat* chat) {

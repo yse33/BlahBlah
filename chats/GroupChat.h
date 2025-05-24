@@ -4,13 +4,13 @@
 class GroupChat : public Chat {
 private:
     MyString name;
-    User* admin;
+    User* admin = nullptr;
     MyVector<MyString> pendingRequests;
-    bool adminApproval;
+    bool adminApproval = false;
 public:
-    explicit GroupChat(MyVector<User*> participants, User* admin);
+    explicit GroupChat(MyString  name, MyVector<User> participants, User* admin);
 
-    MyString getName() const;
+    Chat* clone() const override;
 
     bool isAdminApproval() const;
     void setAdminApproval(bool approval);
@@ -23,5 +23,6 @@ public:
     void addUser(User* user);
     void kickUser(const User* user);
 
+    MyString getName(const User& loggedUser) const override;
     bool isGroupChat() const override;
 };
