@@ -9,7 +9,12 @@ private:
 public:
     Admin() = default;
     Admin(MyString username, MyString password);
-    Admin(MyString username, MyString password, unsigned int id);
 
-    Admin* clone() const override;
+    User* clone() const override;
+
+    unsigned int getId() const;
+
+    void serialize(ostream& os, bool binary) const override;
+    void deserialize(istream& is, bool binary) override;
+    bool canExecute(AdminCommand* command) override;
 };

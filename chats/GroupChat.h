@@ -1,28 +1,33 @@
 #pragma once
+
 #include "Chat.h"
 
 class GroupChat : public Chat {
 private:
     MyString name;
-    User* admin = nullptr;
-    MyVector<MyString> pendingRequests;
+    MyString admin;
+    Vector<MyString> pendingRequests;
     bool adminApproval = false;
 public:
-    explicit GroupChat(MyString  name, MyVector<User> participants, User* admin);
+    GroupChat() = default;
+    explicit GroupChat(MyString name, Vector<MyString> participants, MyString admin, bool adminApproval = false);
 
     Chat* clone() const override;
 
+    MyString getAdmin() const;
+    void setAdmin(MyString admin);
     bool isAdminApproval() const;
     void setAdminApproval(bool approval);
+    const Vector<MyString>& getPendingRequests() const;
 
-    void addPendingRequest(const MyString& request);
-    void removePendingRequest(const MyString& request);
+    void addPendingRequest(const MyString& username);
+    void removePendingRequest(const MyString& username);
 
-    void setAdmin(User* admin);
+    void kickParticipant(const MyString& username);
 
-    void addUser(User* user);
-    void kickUser(const User* user);
-
-    MyString getName(const User& loggedUser) const override;
-    bool isGroupChat() const override;
+    void addParticipant(const MyString& username) override;
+    MyString getName(const User* loggedUser) const override;
+    void serialize(ostream& os, bool binary) const override;
+    void deserialize(istream& is, bool binary) override;
+    void execute(ChatCommand* command) override;
 };

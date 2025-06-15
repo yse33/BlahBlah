@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../util/MyVector.hpp"
-#include "Message.h"
+#include "../commands/Command.h"
+#include "../commands/GroupChatCommand.h"
+#include "../util/Container.hpp"
+#include "../messages/Message.h"
 
 class User;
 
@@ -9,21 +11,27 @@ class Chat {
 protected:
     static unsigned int chatCount;
     unsigned int id = 0;
-    MyVector<User> participants;
-    MyVector<Message> messages;
+    Vector<MyString> participants;
+    Vector<Message> messages;
 public:
-    explicit Chat(MyVector<User> participants);
+    Chat();
+    explicit Chat(Vector<MyString> participants);
 
     virtual ~Chat() = default;
 
     virtual Chat* clone() const = 0;
 
     unsigned int getId() const;
-    const MyVector<User>& getParticipants() const;
+    const Vector<MyString>& getParticipants() const;
+    const Vector<Message>& getMessages() const;
 
+    bool isParticipant(const MyString& username) const;
     void addMessage(const Message& message);
     void showMessages() const;
 
-    virtual bool isGroupChat() const = 0;
-    virtual MyString getName(const User& loggedUser) const = 0;
+    virtual void addParticipant(const MyString& username) = 0;
+    virtual MyString getName(const User* loggedUser) const = 0;
+    virtual void serialize(ostream& file, bool binary) const = 0;
+    virtual void deserialize(istream& file, bool binary) = 0;
+    virtual void execute(ChatCommand* command) = 0;
 };
