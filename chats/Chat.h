@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../commands/Command.h"
+#include "../commands/GroupChatCommand.h"
 #include "../util/Container.hpp"
 #include "../messages/Message.h"
 
@@ -31,4 +33,5 @@ public:
     virtual MyString getName(const User* loggedUser) const = 0;
     virtual void serialize(ostream& file, bool binary) const = 0;
     virtual void deserialize(istream& file, bool binary) = 0;
+    virtual void execute(ChatCommand* command) = 0;
 };

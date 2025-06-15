@@ -14,4 +14,5 @@ public:
     MyString getName(const User* loggedUser) const override;
     void serialize(ostream& os, bool binary) const override;
     void deserialize(istream& is, bool binary) override;
+    void execute(ChatCommand* command) override;
 };

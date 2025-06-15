@@ -3,6 +3,8 @@
 #include "../util/MyString.h"
 #include "../util/Container.hpp"
 #include "../chats/Chat.h"
+#include "../commands/AdminCommand.h"
+#include "../commands/Command.h"
 
 class User {
 protected:
@@ -26,4 +28,6 @@ public:
 
     virtual void serialize(ostream& os, bool binary) const;
     virtual void deserialize(istream& is, bool binary);
+    virtual bool canExecute(Command* command);
+    virtual bool canExecute(AdminCommand* command);
 };

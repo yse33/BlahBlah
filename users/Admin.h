@@ -16,4 +16,5 @@ public:
 
     void serialize(ostream& os, bool binary) const override;
     void deserialize(istream& is, bool binary) override;
+    bool canExecute(AdminCommand* command) override;
 };

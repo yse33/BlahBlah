@@ -92,3 +92,7 @@ void Admin::deserialize(istream& is, const bool binary) {
         }
     }
 }
+
+bool Admin::canExecute(AdminCommand* command) {
+    return true;
+}

@@ -4,6 +4,10 @@
 Message::Message(MyString sender, MyString text, const time_t timestamp)
     : sender(std::move(sender)), text(std::move(text)), timestamp(timestamp) {}
 
+MyString Message::getSender() const {
+    return sender;
+}
+
 void Message::serialize(ostream& os, const bool binary) const {
     if (!binary) {
         os << timestamp << endl;

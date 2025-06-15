@@ -26,23 +26,15 @@ private:
     void handleAccountCreation(const MyString& username, const MyString& password);
     void registerAccount(const MyString& username, const MyString& password);
     void logout();
-
-    void viewChats() const;
-    void selectChat(unsigned int chatId);
-    void sendMessage(const Message& message) const;
-    void createIndividualChat(const MyString& username);
-    void createGroupChat(const MyString& name, Vector<MyString>& participants);
-    void addToGroupChat(unsigned int chatId, const MyString& username) const;
-    void leaveGroupChat(unsigned int chatId) const;
-    void kickFromGroupChat(unsigned int chatId, const MyString& username) const;
-    void setGroupChatAdmin(unsigned int chatId, const MyString& username) const;
-    void viewGroupChatStats(unsigned int chatId) const;
-
-    void deleteUser(const MyString& username);
-    void deleteGroupChat(unsigned int chatId);
-    void viewAllChats() const;
 public:
     explicit ChatSystem(MyString filepath, bool binary);
 
     ~ChatSystem() = default;
+
+    Container<Chat>& getChats();
+    Container<User>& getUsers();
+    User* getLoggedUser() const;
+    Chat* getSelectedChat() const;
+    void setLoggedUser(User* user);
+    void setSelectedChat(Chat* chat);;
 };

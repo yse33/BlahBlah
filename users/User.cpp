@@ -96,3 +96,11 @@ void User::deserialize(istream &is, const bool binary) {
         }
     }
 }
+
+bool User::canExecute(Command* command) {
+    return true;
+}
+
+bool User::canExecute(AdminCommand* command) {
+    return false;
+}

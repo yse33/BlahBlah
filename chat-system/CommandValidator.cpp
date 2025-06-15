@@ -56,13 +56,19 @@ bool CommandValidator::validateCommandSyntax(const Vector<MyString>& args) {
     }
     else if (args[0] == "add-to-group") {
         if (args.getSize() != 3) {
-            cout << "Usage: add-to-group-chat <chatID> <username>" << endl;
+            cout << "Usage: add-to-group <chatID> <username>" << endl;
             return false;
         }
     }
     else if (args[0] == "leave-group") {
         if (args.getSize() != 2) {
             cout << "Usage: leave-group <chatID>" << endl;
+            return false;
+        }
+    }
+    else if (args[0] == "group-stats") {
+        if (args.getSize() != 2) {
+            cout << "Usage: group-stats <chatID>" << endl;
             return false;
         }
     }
@@ -115,19 +121,6 @@ bool CommandValidator::validateUserAuthentication(const User* user, const bool d
         if (desiredLoginState) cout << "You are not logged in!" << endl;
         else cout << "You are already logged in!" << endl;
         return false;
-    }
-    return true;
-}
-
-bool CommandValidator::validateUserAuthenticationAndAuthorization(const User* user, const bool requireAdmin) {
-    if (!validateUserAuthentication(user)) return false;
-    if (requireAdmin) {
-        const Admin* admin = dynamic_cast<const Admin*>(user);
-        if (!admin) {
-            cout << "You do not have permission to perform this action!" << endl;
-            return false;
-        }
-        return true;
     }
     return true;
 }

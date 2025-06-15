@@ -16,6 +16,8 @@ public:
 
     ~Message() = default;
 
+    MyString getSender() const;
+
     void serialize(ostream& os, bool binary) const;
     void deserialize(istream& is, bool binary);
 

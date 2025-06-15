@@ -107,3 +107,7 @@ void IndividualChat::deserialize(istream& is, const bool binary) {
         }
     }
 }
+
+void IndividualChat::execute(ChatCommand* command) {
+    command->executeWith(this);
+}

@@ -206,3 +206,7 @@ void GroupChat::deserialize(istream& is, const bool binary) {
         }
     }
 }
+
+void GroupChat::execute(ChatCommand* command) {
+    command->executeWith(this);
+}
