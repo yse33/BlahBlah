@@ -1,150 +1,140 @@
 #include "ChatSystem.h"
+#include "CommandValidator.h"
 
-#include "../chats/GroupChat.h"
-#include "../chats/IndividualChat.h"
+Vector<unsigned int> ChatSystem::getUserChatIds() const {
+    Vector<unsigned int> chatIds;
+    for (size_t i = 0; i < users.getSize(); i++) {
+        Vector<unsigned int> userChats = users[i]->getChats();
+        for (size_t j = 0; j < userChats.getSize(); j++) {
+            if (!chatIds.contains(userChats[j])) {
+                chatIds.push(userChats[j]);
+            }
+        }
+    }
+    return chatIds;
+}
 
-ChatSystem::ChatSystem(const MyVector<Chat>& chats, const MyVector<User>& users, const MyVector<Admin>& admins)
-    : chats(chats), users(users), admins(admins) {
+void ChatSystem::load() {
+    fileSystem.readUsers(users, binary);
+    Vector<unsigned int> chatIds = getUserChatIds();
+    fileSystem.readChats(chats, chatIds, binary);
+}
+
+void ChatSystem::save() const {
+    if (!users.isEmpty()) fileSystem.writeUsers(users, binary);
+    if (!chats.isEmpty()) fileSystem.writeChats(chats, binary);
+}
+
+ChatSystem::ChatSystem(MyString filepath, const bool binary) : fileSystem(std::move(filepath)), binary(binary) {
+    fileSystem.checkFiles(binary);
+    load();
     getCommand();
 }
 
 void ChatSystem::getCommand() {
     while (true) {
-        MyString input;
-        getline(cin, input);
+        MyString commandLine;
+        getline(cin, commandLine);
 
-        if (input == "exit") {
+        if (commandLine == "exit") {
             cout << "Exiting..." << endl;
+            save();
             break;
         }
 
-        executeCommand(input);
+        executeCommand(commandLine);
     }
 }
 
-void ChatSystem::executeCommand(const MyString& choice) {
-    MyVector commands(choice.split(' '));
-    if (commands.getSize() == 0) {
-        cout << "Invalid command!" << endl;
-        return;
-    }
+void ChatSystem::executeCommand(const MyString& commandLine) {
+    Vector args(commandLine.split(' '));
+    if (!CommandValidator::validateCommandSyntax(args)) return;
 
-    if (*commands[0] == "login") {
-        if (commands.getSize() != 3) {
-            cout << "Usage: login <username> <password>" << endl;
-            return;
-        }
-        login(*commands[1], *commands[2]);
-    } else if (*commands[0] == "logout") {
-        if (commands.getSize() != 1) {
-            cout << "Usage: logout" << endl;
-            return;
-        }
+    if (args[0] == "login") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser, false)) return;
+        login(args[1], args[2]);
+    }
+    else if (args[0] == "create-account") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser, false)) return;
+        registerAccount(args[1], args[2]);
+    }
+    else if (args[0] == "logout") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
         logout();
-    } else if (*commands[0] == "viewChats") {
-        if (commands.getSize() != 1) {
-            cout << "Usage: viewChats" << endl;
-            return;
-        }
+    }
+    else if (args[0] == "view-chats") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
         viewChats();
-    } else if (*commands[0] == "selectChat") {
-        if (commands.getSize() != 2) {
-            cout << "Usage: selectChat <chat_id>" << endl;
-            return;
-        }
-        selectChat(stoi(commands[1]->getString()));
     }
-    else if (*commands[0] == "sendMessage") {
-        if (commands.getSize() != 2) {
-            cout << "Usage: sendMessage <message>" << endl;
-            return;
-        }
-        sendMessage(Message(loggedUser, *commands[1]));
-    } else if (*commands[0] == "createGroupChat") {
-        if (commands.getSize() < 3) {
-            cout << "Usage: createGroupChat <name> <user1> <user2> ..." << endl;
-            return;
-        }
-        MyVector<User> participants;
-        for (size_t i = 2; i < commands.getSize(); i++) {
-            participants.push(getUserByUsername(*commands[i]));
-        }
-        createGroupChat(*commands[1], participants);
-    } else if (*commands[0] == "addToGroupChat") {
-        if (commands.getSize() != 3) {
-            cout << "Usage: addToGroupChat <chat_id> <username>" << endl;
-            return;
-        }
-        addToGroupChat(stoi(commands[1]->getString()), *commands[2]);
-    } else if (*commands[0] == "leaveGroupChat") {
-        if (commands.getSize() != 2) {
-            cout << "Usage: leaveGroupChat <chat_id>" << endl;
-            return;
-        }
-        leaveGroupChat(stoi(commands[1]->getString()));
-    } else if (*commands[0] == "kickFromGroupChat") {
-        if (commands.getSize() != 3) {
-            cout << "Usage: kickFromGroupChat <chat_id> <username>" << endl;
-            return;
-        }
-        kickFromGroupChat(stoi(commands[1]->getString()), *commands[2]);
-    } else if (*commands[0] == "setGroupChatAdmin") {
-        if (commands.getSize() != 3) {
-            cout << "Usage: setGroupChatAdmin <chat_id> <username>" << endl;
-            return;
-        }
-        setGroupChatAdmin(stoi(commands[1]->getString()), *commands[2]);
-    } else if (*commands[0] == "deleteUser") {
-        if (commands.getSize() != 2) {
-            cout << "Usage: deleteUser <username>" << endl;
-            return;
-        }
-        deleteUser(*commands[1]);
-    } else if (*commands[0] == "deleteGroupChat") {
-        if (commands.getSize() != 2) {
-            cout << "Usage: deleteGroupChat <chat_id>" << endl;
-            return;
-        }
-        deleteGroupChat(stoi(commands[1]->getString()));
-    } else if (*commands[0] == "viewAllChats") {
-        if (commands.getSize() != 1) {
-            cout << "Usage: viewAllChats" << endl;
-            return;
-        }
-        viewAllChats();
-    } else {
-        cout << "Invalid command!" << endl;
+    else if (args[0] == "select-chat") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        selectChat(stoi(args[1].getString()));
     }
-}
+    else if (args[0] == "send-message") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
 
-User* ChatSystem::getUserByUsername(const MyString &username) {
-    for (size_t i = 0; i < users.getSize(); i++) {
-        if (users[i]->getUsername() == username) {
-            return users[i];
-        }
+        const size_t start = args[0].getLength() + 1;
+        const MyString message = commandLine.substring(start, commandLine.getLength() - start);
+        sendMessage(Message(loggedUser->getName(), message));
     }
-    return nullptr;
+    else if (args[0] == "create-chat") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        createIndividualChat(args[1]);
+    }
+    else if (args[0] == "create-group") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+
+        Vector<MyString> participants;
+        for (size_t i = 2; i < args.getSize(); i++) {
+            participants.push(args[i]);
+        }
+        createGroupChat(args[1], participants);
+    }
+    else if (args[0] == "add-to-group") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        addToGroupChat(stoi(args[1].getString()), args[2]);
+    }
+    else if (args[0] == "leave-group") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        leaveGroupChat(stoi(args[1].getString()));
+    }
+    else if (args[0] == "kick-from-group") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        kickFromGroupChat(stoi(args[1].getString()), args[2]);
+    }
+    else if (args[0] == "set-group-admin") {
+        if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        setGroupChatAdmin(stoi(args[1].getString()), args[2]);
+    }
+    else if (args[0] == "delete-user") {
+        //if (!CommandValidator::validateUserAuthenticationAndAuthorization(loggedUser, ADMIN)) return;
+        deleteUser(args[1]);
+    }
+    else if (args[0] == "delete-group") {
+        //if (!CommandValidator::validateUserAuthenticationAndAuthorization(loggedUser, ADMIN)) return;
+        deleteGroupChat(stoi(args[1].getString()));
+    }
+    else if (args[0] == "view-all-chats") {
+        //if (!CommandValidator::validateUserAuthentication(loggedUser)) return;
+        viewAllChats();
+    }
 }
 
 void ChatSystem::login(const MyString& username, const MyString& password) {
-    if (loggedUser) {
-        cout << "You are already logged in as " << loggedUser->getUsername() << "." << endl;
+    User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
+        handleAccountCreation(username, password);
         return;
     }
 
-    for (size_t i = 0; i < users.getSize(); i++) {
-        if (users[i]->getUsername() == username) {
-            if (users[i]->getPassword() != password) {
-                cout << "Invalid password!" <<  endl;
-                return;
-            }
-
-            loggedUser = users[i];
-            cout << "Welcome, " << loggedUser->getUsername() << "!" << endl;
-            return;
-        }
+    if (user->getPassword() != password) {
+        cout << "Invalid password!" << endl;
+        return;
     }
-    handleAccountCreation(username, password);
+
+    loggedUser = user;
+    cout << "Welcome, " << loggedUser->getName() << "!" << endl;
 }
 
 void ChatSystem::handleAccountCreation(const MyString& username, const MyString& password) {
@@ -152,6 +142,7 @@ void ChatSystem::handleAccountCreation(const MyString& username, const MyString&
     while (true) {
         cout << "Account not found. Create? (y/n)" << endl;
         cin >> choice;
+        cin.ignore();
         switch (choice) {
             case 'y':
             case 'Y':
@@ -159,239 +150,277 @@ void ChatSystem::handleAccountCreation(const MyString& username, const MyString&
                 return;
             case 'n':
             case 'N':
-                cout << "Exiting..." << endl;
+                cout << "Account creation canceled!" << endl;
                 return;
             default:
-                cout << "Invalid choice. Please try again." << endl;
+                cout << "Invalid choice. Please try again!" << endl;
         }
     }
 }
 
 void ChatSystem::registerAccount(const MyString& username, const MyString& password) {
-    if (getUserByUsername(username)) {
-        cout << "Username already exists. Please choose a different one." << endl;
+    const User* existingUser = users.getByName(username);
+    if (existingUser) {
+        cout << "Username already exists. Please choose a different one!" << endl;
         return;
     }
 
     users.push(User(username, password));
     cout << "Account created!" << endl;
+
+    loggedUser = users.peek();
+    cout << "Welcome, " << loggedUser->getName() << "!" << endl;
 }
 
 void ChatSystem::logout() {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
-        return;
-    }
-
-    cout << "Goodbye, " << loggedUser->getUsername() << "!" << endl;
+    cout << "Goodbye, " << loggedUser->getName() << "!" << endl;
     loggedUser = nullptr;
 }
 
 void ChatSystem::viewChats() const {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
-        return;
-    }
-
-    const size_t chatCount = loggedUser->getChats().getSize();
-
-    if (chatCount == 0) {
-        cout << "No chats available." << endl;
+    Vector<unsigned int> chatIds = loggedUser->getChats();
+    if (chatIds.isEmpty()) {
+        cout << "No chats available!" << endl;
         return;
     }
 
     cout << "Chats:" << endl;
-    for (size_t i = 0; i < chatCount; i++) {
-        cout << loggedUser->getChats()[i]->getName(*loggedUser) << endl;
+    for (size_t i =0; i < chatIds.getSize(); i++) {
+        const Chat* chat = chats.getById(chatIds[i]);
+        cout << chat->getId() << " | " << chat->getName(loggedUser) << endl;
     }
 }
 
-void ChatSystem::selectChat(const unsigned int id) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+void ChatSystem::selectChat(const unsigned int chatId) {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < loggedUser->getChats().getSize(); i++) {
-        if (loggedUser->getChats()[i]->getId() == id) {
-            selectedChat = loggedUser->getChats()[i];
-            cout << "Chat " << selectedChat->getName(*loggedUser) << ":" << endl;
-            selectedChat->showMessages();
-            return;
-        }
+    if (!chat->isParticipant(loggedUser->getName())) {
+        cout << "You are not a participant in this chat!" << endl;
+        return;
     }
 
-    cout << "Chat not found." << endl;
+    selectedChat = chat;
+    cout << "Chat " << selectedChat->getName(loggedUser) << ":" << endl;
+    selectedChat->showMessages();
 }
 
 void ChatSystem::sendMessage(const Message& message) const {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
-        return;
-    }
-
     if (!selectedChat) {
-        cout << "No chat selected." << endl;
+        cout << "No chat selected!" << endl;
         return;
     }
 
     selectedChat->addMessage(message);
 }
 
-void ChatSystem::createGroupChat(const MyString& name, const MyVector<User>& participants) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+void ChatSystem::createIndividualChat(const MyString &username) {
+    User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
         return;
     }
 
-    if (name == "") {
-        cout << "Chat name cannot be empty." << endl;
+    if (username == loggedUser->getName()) {
+        cout << "You cannot create a chat with yourself!" << endl;
         return;
     }
 
+    Vector<MyString> participants;
+    participants.push(loggedUser->getName());
+    participants.push(username);
+
+    chats.push(new IndividualChat(participants));
+
+    loggedUser->addChat(chats.peek()->getId());
+    user->addChat(chats.peek()->getId());
+
+    cout << "Chat with " << username << " created!" << endl;
+}
+
+
+void ChatSystem::createGroupChat(const MyString& name, Vector<MyString>& participants) {
     if (participants.getSize() < 2) {
-        cout << "At least two participants are required to create a group chat." << endl;
+        cout << "At least two participants are required to create a group chat!" << endl;
         return;
     }
 
-    chats.push(new GroupChat(name, participants, loggedUser));
-    cout << "Group chat created!" << endl;
-}
-
-void ChatSystem::addToGroupChat(const unsigned int id, const MyString& username) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
-        return;
-    }
-
-    if (!selectedChat) {
-        cout << "No chat selected." << endl;
-        return;
-    }
-
-    for (size_t i = 0; i < chats.getSize(); i++) {
-        if (chats[i]->getId() == id) {
-            GroupChat* groupChat = dynamic_cast<GroupChat*>(chats[i]);
-            groupChat->addUser(getUserByUsername(username));
-            cout << "User added to group chat!" << endl;
+    for (size_t i = 0; i < participants.getSize(); i++) {
+        const User* user = users.getByName(participants[i]);
+        if (!user) {
+            cout << "User with username " << participants[i] << " does not exist!" << endl;
+            return;
+        }
+        if (user->getName() == loggedUser->getName()) {
+            cout << "You cannot add yourself to a group chat!" << endl;
             return;
         }
     }
 
-    cout << "Group chat not found." << endl;
+    participants.push(loggedUser->getName());
+    chats.push(new GroupChat(name, participants, loggedUser->getName()));
+
+    for (size_t i = 0; i < participants.getSize(); i++) {
+        User* user = users.getByName(participants[i]);
+        user->addChat(chats.peek()->getId());
+    }
+
+    cout << "Group chat " << chats.peek()->getName(loggedUser) << " created!" << endl;
 }
 
-void ChatSystem::leaveGroupChat(const unsigned int id) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+void ChatSystem::addToGroupChat(const unsigned int chatId, const MyString& username) const {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
         return;
     }
 
-    if (!selectedChat) {
-        cout << "No chat selected." << endl;
+    User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < chats.getSize(); i++) {
-        if (chats[i]->getId() == id) {
-            GroupChat* groupChat = dynamic_cast<GroupChat*>(chats[i]);
-            groupChat->kickUser(loggedUser);
-            cout << "You left the group chat!" << endl;
-            return;
-        }
+    GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+    if (!groupChat) {
+        cout << "Chat with ID " << chatId << " is not a group chat!" << endl;
+        return;
     }
 
-    cout << "Group chat not found." << endl;
+    if (chat->isParticipant(user->getName())) {
+        cout << "User is already a participant in this chat!" << endl;
+        return;
+    }
+
+    groupChat->addParticipant(user->getName());
+    user->addChat(chatId);
 }
 
-void ChatSystem::kickFromGroupChat(const unsigned int id, const MyString& username) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+void ChatSystem::leaveGroupChat(const unsigned int chatId) const {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
         return;
     }
 
-    if (!selectedChat) {
-        cout << "No chat selected." << endl;
+    GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+    if (!groupChat) {
+        cout << "Chat with ID " << chatId << " is not a group chat!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < chats.getSize(); i++) {
-        if (chats[i]->getId() == id) {
-            GroupChat* groupChat = dynamic_cast<GroupChat*>(chats[i]);
-            groupChat->kickUser(getUserByUsername(username));
-            cout << "User kicked from group chat!" << endl;
-            return;
-        }
+    if (!groupChat->isParticipant(loggedUser->getName())) {
+        cout << "You are not a participant in this group chat!" << endl;
+        return;
     }
 
-    cout << "Group chat not found." << endl;
+    groupChat->kickParticipant(loggedUser->getName());
+    loggedUser->removeChat(chatId);
 }
 
-void ChatSystem::setGroupChatAdmin(const unsigned int id, const MyString& username) {
-    if (!loggedUser) {
-         cout << "You are not logged in." <<  endl;
+void ChatSystem::kickFromGroupChat(const unsigned int chatId, const MyString& username) const {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
         return;
     }
 
-    if (!selectedChat) {
-         cout << "No chat selected." <<  endl;
+    User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < chats.getSize(); i++) {
-        if (chats[i]->getId() == id) {
-            GroupChat* groupChat = dynamic_cast<GroupChat*>(chats[i]);
-            groupChat->setAdmin(getUserByUsername(username));
-            cout << "User set as admin!" << endl;
-            return;
-        }
+    GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+    if (!groupChat) {
+        cout << "Chat with ID " << chatId << " is not a group chat!" << endl;
+        return;
     }
 
-    cout << "Group chat not found." << endl;
+    if (chat->isParticipant(user->getName())) {
+        cout << "User is not a participant in this chat!" << endl;
+        return;
+    }
+
+    groupChat->kickParticipant(user->getName());
+    user->removeChat(chatId);
+}
+
+void ChatSystem::setGroupChatAdmin(const unsigned int chatId, const MyString& username) const {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
+        return;
+    }
+
+    const User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
+        return;
+    }
+
+    GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+    if (!groupChat) {
+        cout << "Chat with ID " << chatId << " is not a group chat!" << endl;
+        return;
+    }
+
+    if (chat->isParticipant(user->getName())) {
+        cout << "User is not a participant in this chat!" << endl;
+        return;
+    }
+
+    groupChat->setAdmin(user->getName());
 }
 
 void ChatSystem::deleteUser(const MyString& username) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+    const User* user = users.getByName(username);
+    if (!user) {
+        cout << "User with username " << username << " does not exist!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < users.getSize(); i++) {
-        if (users[i]->getUsername() == username) {
-            users.remove(i);
-            cout << "User deleted!" << endl;
-            return;
+    for (size_t i = 0; i < user->getChats().getSize(); i++) {
+        Chat* chat = chats.getById(user->getChats()[i]);
+        if (chat) {
+            GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+            if (groupChat) {
+                groupChat->kickParticipant(user->getName());
+            } else {
+                chats.removeById(user->getChats()[i]);
+            }
         }
     }
-
-    cout << "User not found." << endl;
+    users.removeByName(user->getName());
 }
 
-void ChatSystem::deleteGroupChat(const unsigned int id) {
-    if (!loggedUser) {
-        cout << "You are not logged in." << endl;
+void ChatSystem::deleteGroupChat(const unsigned int chatId) {
+    Chat* chat = chats.getById(chatId);
+    if (!chat) {
+        cout << "Chat with ID " << chatId << " does not exist!" << endl;
         return;
     }
 
-    for (size_t i = 0; i < chats.getSize(); i++) {
-        if (chats[i]->getId() == id) {
-            chats.remove(i);
-            cout << "Group chat deleted!" << endl;
-            return;
-        }
+    const GroupChat* groupChat = dynamic_cast<GroupChat*>(chat);
+    if (!groupChat) {
+        cout << "Chat with ID " << chatId << " is not a group chat!" << endl;
+        return;
     }
 
-    cout << "Group chat not found." << endl;
+    for (size_t i = 0; i < groupChat->getParticipants().getSize(); i++) {
+        User* user = users.getByName(groupChat->getParticipants()[i]);
+        if (user) {
+            user->removeChat(chatId);
+        }
+    }
+    chats.removeById(chatId);
 }
 
-void ChatSystem::viewAllChats() {
+void ChatSystem::viewAllChats() const {
     for (size_t i = 0; i < chats.getSize(); i++) {
-        cout << chats[i]->getId() << ": ";
-        if (chats[i]->isGroupChat()) {
-            cout << chats[i]->getName(*loggedUser) << endl;
-        } else {
-            const IndividualChat* individualChat = dynamic_cast<IndividualChat*>(chats[i]);
-            cout << individualChat->getFullName() << endl;
-        }
+        cout << chats[i]->getName(loggedUser) << endl;
     }
 }

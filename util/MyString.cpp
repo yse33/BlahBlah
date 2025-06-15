@@ -1,7 +1,6 @@
 #include "MyString.h"
 
 #include <cstring>
-#include <algorithm>
 #include <stdexcept>
 
 void MyString::copyFrom(const MyString& other) {
@@ -54,7 +53,7 @@ MyString::MyString(const MyString& other) {
 }
 
 MyString::MyString(MyString&& other) noexcept {
-    moveFrom(move(other));
+    moveFrom(std::move(other));
 }
 
 MyString& MyString::operator=(const MyString& other) {
@@ -68,7 +67,7 @@ MyString& MyString::operator=(const MyString& other) {
 MyString& MyString::operator=(MyString&& other) noexcept {
     if (this != &other) {
         free();
-        moveFrom(move(other));
+        moveFrom(std::move(other));
     }
     return *this;
 }
@@ -83,6 +82,10 @@ MyString* MyString::clone() const {
 
 size_t MyString::getLength() const {
     return size;
+}
+
+bool MyString::isEmpty() const {
+    return size == 0;
 }
 
 const char* MyString::getString() const {
@@ -102,8 +105,8 @@ MyString MyString::substring(const size_t start, const size_t length) const {
     return result;
 }
 
-MyVector<MyString> MyString::split(const char delimiter) const {
-    MyVector<MyString> result;
+Vector<MyString> MyString::split(const char delimiter) const {
+    Vector<MyString> result;
     size_t start = 0;
 
     for (size_t i = 0; i < size; i++) {
@@ -119,6 +122,22 @@ MyVector<MyString> MyString::split(const char delimiter) const {
         result.push(substring(start, size - start));
     }
 
+    return result;
+}
+
+void MyString::lowercase() const {
+    if (!str) return;
+
+    for (size_t i = 0; i < size; i++) {
+        if (str[i] >= 'A' && str[i] <= 'Z') {
+            str[i] += 'a' - 'A';
+        }
+    }
+}
+
+MyString MyString::toLowercase() const {
+    MyString result(*this);
+    result.lowercase();
     return result;
 }
 
@@ -152,6 +171,27 @@ char MyString::operator[](const size_t index) const {
     return str[index];
 }
 
+ostream& operator<<(ostream& os, const MyString& myString) {
+    os << (myString.str ? myString.str : "");
+    return os;
+}
+
+istream& operator>>(istream& is, MyString& myString) {
+    char buffer[1024];
+    is >> buffer;
+    myString.free();
+    myString = std::move(MyString(buffer));
+    return is;
+}
+
+istream& getline(istream& is, MyString& myString) {
+    char buffer[1024];
+    is.getline(buffer, sizeof(buffer));
+    myString.free();
+    myString = std::move(MyString(buffer));
+    return is;
+}
+
 bool operator==(const MyString& lhs, const MyString& rhs) {
     return strcmp(lhs.getString(), rhs.getString()) == 0;
 }
@@ -164,23 +204,6 @@ bool operator!=(const MyString& lhs, const MyString& rhs) {
     return !(lhs == rhs);
 }
 
-ostream& operator<<(ostream& os, const MyString& myString) {
-    os << (myString.str ? myString.str : "");
-    return os;
-}
-
-istream& operator>>(istream& is, MyString& myString) {
-    char buffer[1024];
-    is >> buffer;
-    myString.free();
-    myString = move(MyString(buffer));
-    return is;
-}
-
-istream& getline(istream& is, MyString& myString) {
-    char buffer[1024];
-    is.getline(buffer, sizeof(buffer));
-    myString.free();
-    myString = move(MyString(buffer));
-    return is;
+bool operator!=(const MyString& lhs, const char* rhs) {
+    return !(lhs == rhs);
 }

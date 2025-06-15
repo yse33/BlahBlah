@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MyVector.hpp"
+#include "Vector.hpp"
 #include <iostream>
 
 using namespace std;
@@ -29,10 +29,13 @@ public:
     MyString* clone() const;
 
     size_t getLength() const;
+    bool isEmpty() const;
     const char* getString() const;
 
     MyString substring(size_t start, size_t length) const;
-    MyVector<MyString> split(char delimiter) const;
+    Vector<MyString> split(char delimiter) const;
+    void lowercase() const;
+    MyString toLowercase() const;
 
     MyString operator+(const MyString& other) const;
     MyString operator+(const char* other) const;
@@ -47,3 +50,4 @@ public:
 bool operator==(const MyString& lhs, const MyString& rhs);
 bool operator==(const MyString& lhs, const char* rhs);
 bool operator!=(const MyString& lhs, const MyString& rhs);
+bool operator!=(const MyString& lhs, const char* rhs);

@@ -3,16 +3,33 @@
 
 unsigned int Chat::chatCount = 0;
 
-Chat::Chat(MyVector<User> participants) : participants(std::move(participants)) {
-    id = ++chatCount;
+Chat::Chat() {
+    id = chatCount++;
+}
+
+Chat::Chat(Vector<MyString> participants) : participants(std::move(participants)) {
+    id = chatCount++;
 }
 
 unsigned int Chat::getId() const {
     return id;
 }
 
-const MyVector<User>& Chat::getParticipants() const {
+const Vector<MyString>& Chat::getParticipants() const {
     return participants;
+}
+
+const Vector<Message>& Chat::getMessages() const {
+    return messages;
+}
+
+bool Chat::isParticipant(const MyString& username) const {
+    for (size_t i = 0; i < participants.getSize(); i++) {
+        if (participants[i] == username) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Chat::addMessage(const Message& message) {
@@ -20,7 +37,11 @@ void Chat::addMessage(const Message& message) {
 }
 
 void Chat::showMessages() const {
-    for (size_t i = 0; i < messages.getSize(); i++) {
-        cout << messages[i];
+    if (messages.isEmpty()) {
+        cout << "No messages in this chat." << endl;
+    } else {
+        for (size_t i = 0; i < messages.getSize(); i++) {
+            cout << messages[i] << endl;
+        }
     }
 }
